@@ -13,17 +13,14 @@ namespace ProcessamentoEmLote.Services
             {
                 Logger.Info($"Iniciando processamento do arquivo: {inputFilePath}");
 
-                var clubs = _jsonReader.ReadClubs(inputFilePath).ToList();
+                var clubs = _jsonReader.ReadClubs(inputFilePath);
+                var hasData = _csvWriter.WriteCsvFiles(clubs);
 
-                if (clubs.Count == 0)
+                if (!hasData)
                 {
                     Logger.Warn("Nenhum clube válido encontrado. Nenhum CSV será gerado.");
                     return;
                 }
-
-                Logger.Info($"{clubs.Count} clubes carregados do arquivo.");
-
-                _csvWriter.WriteCsvFiles(clubs);
 
                 Logger.Info("Processamento concluído com sucesso.");
             }

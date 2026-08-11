@@ -23,13 +23,11 @@ namespace ProcessamentoEmLote.Services
             var fullPath = Path.GetFullPath(jsonFilePath);
             var extension = Path.GetExtension(fullPath).ToLowerInvariant();
 
-            // Validação de extensão
             if (extension != ".json" && extension != ".jsonl")
             {
                 throw new NotSupportedException($"Formato de arquivo não suportado: {extension}. Use apenas .json ou .jsonl.");
             }
 
-            // Validação de existência
             if (!File.Exists(fullPath))
             {
                 throw new FileNotFoundException($"Arquivo não encontrado: {fullPath}");
@@ -37,20 +35,25 @@ namespace ProcessamentoEmLote.Services
 
             var fileInfo = new FileInfo(fullPath);
 
-            // Validação de arquivo vazio
             if (fileInfo.Length == 0)
             {
                 Logger.Warn("Arquivo vazio, nada a processar.");
                 yield break;
             }
 
-            int lineNumber = 0;
+            using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
+            using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
 
-            foreach (var line in File.ReadLines(fullPath))
+            var lineNumber = 0;
+            while (!reader.EndOfStream)
             {
+                var line = reader.ReadLine();
                 lineNumber++;
 
-                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
 
                 Club? club = null;
 

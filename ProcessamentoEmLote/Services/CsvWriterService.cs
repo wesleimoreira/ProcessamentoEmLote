@@ -1,9 +1,7 @@
-﻿using CsvHelper;
-using CsvHelper.Configuration;
-using ProcessamentoEmLote.DTOs;
+﻿using ProcessamentoEmLote.DTOs;
 using ProcessamentoEmLote.Models;
 using ProcessamentoEmLote.Utils;
-using System.Globalization;
+using System.Text;
 
 namespace ProcessamentoEmLote.Services
 {
@@ -21,68 +19,140 @@ namespace ProcessamentoEmLote.Services
             }
         }
 
-
-
-        public void WriteCsvFiles(IEnumerable<Club> clubs)
+        public bool WriteCsvFiles(IEnumerable<Club> clubs)
         {
-            if (clubs == null || !clubs.Any())
+            if (clubs == null)
             {
                 Logger.Warn("Nenhum clube válido encontrado para exportação.");
-                return;
+                return false;
             }
 
             var clubsFile = Path.Combine(_outputDir, "clubs.csv");
             var playersFile = Path.Combine(_outputDir, "players.csv");
 
-            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
+            var clubCount = 0;
+            var playerCount = 0;
+
+            using (var clubsWriter = new StreamWriter(clubsFile, false, Encoding.UTF8))
             {
-                Delimiter = ",",
-                Encoding = System.Text.Encoding.UTF8,
-                HasHeaderRecord = true,
-                Quote = '"',
-                Escape = '"',
-                BadDataFound = context =>
+                WriteRow(clubsWriter,
+                    nameof(ClubCsv.IdDoClube),
+                    nameof(ClubCsv.Nome),
+                    nameof(ClubCsv.Campeonato),
+                    nameof(ClubCsv.DataDeFundacao),
+                    nameof(ClubCsv.Cidade),
+                    nameof(ClubCsv.Estado),
+                    nameof(ClubCsv.Pais),
+                    nameof(ClubCsv.Estadio),
+                    nameof(ClubCsv.Presidente),
+                    nameof(ClubCsv.Apelido),
+                    nameof(ClubCsv.Cores));
+
+                using (var playersWriter = new StreamWriter(playersFile, false, Encoding.UTF8))
                 {
-                    Logger.Warn($"Dado inválido ignorado: {context.RawRecord}");
-                }
-            };
+                    WriteRow(playersWriter,
+                        nameof(PlayerCsv.IdDoClube),
+                        nameof(PlayerCsv.IdDoJogador),
+                        nameof(PlayerCsv.Nome),
+                        nameof(PlayerCsv.Idade),
+                        nameof(PlayerCsv.Gols),
+                        nameof(PlayerCsv.DataDeEstreia),
+                        nameof(PlayerCsv.Posicao),
+                        nameof(PlayerCsv.NumeroDaCamisa));
 
-            // Escreve clubs.csv
-            using (var writer = new StreamWriter(clubsFile))
-            using (var csv = new CsvWriter(writer, csvConfig))
-            {
-                csv.WriteHeader<ClubCsv>();
-                csv.NextRecord();
-
-                foreach (var club in clubs.Where(c => IsValidChampionship(c.Championship)))
-                {
-                    var record = MapClubToCsv(club);
-                    csv.WriteRecord(record);
-                    csv.NextRecord();
-                }
-            }
-
-            // Escreve players.csv
-            using (var writer = new StreamWriter(playersFile))
-            using (var csv = new CsvWriter(writer, csvConfig))
-            {
-                csv.WriteHeader<PlayerCsv>();
-                csv.NextRecord();
-
-                foreach (var club in clubs.Where(c => IsValidChampionship(c.Championship)))
-                {
-                    if (club.Players == null || !club.Players.Any()) continue;
-
-                    foreach (var player in club.Players)
+                    foreach (var club in clubs)
                     {
-                        var record = MapPlayerToCsv(club.ClubId, player);
-                        csv.WriteRecord(record);
-                        csv.NextRecord();
+                        if (!IsValidChampionship(club.Championship))
+                        {
+                            continue;
+                        }
+
+                        clubCount++;
+
+                        var clubRecord = MapClubToCsv(club);
+                        WriteRow(clubsWriter,
+                            clubRecord.IdDoClube,
+                            clubRecord.Nome,
+                            clubRecord.Campeonato,
+                            clubRecord.DataDeFundacao,
+                            clubRecord.Cidade,
+                            clubRecord.Estado,
+                            clubRecord.Pais,
+                            clubRecord.Estadio,
+                            clubRecord.Presidente,
+                            clubRecord.Apelido,
+                            clubRecord.Cores);
+
+                        if (club.Players == null || club.Players.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        foreach (var player in club.Players)
+                        {
+                            var playerRecord = MapPlayerToCsv(club.ClubId, player);
+                            WriteRow(playersWriter,
+                                playerRecord.IdDoClube,
+                                playerRecord.IdDoJogador,
+                                playerRecord.Nome,
+                                playerRecord.Idade,
+                                playerRecord.Gols,
+                                playerRecord.DataDeEstreia,
+                                playerRecord.Posicao,
+                                playerRecord.NumeroDaCamisa);
+                            playerCount++;
+                        }
                     }
                 }
             }
 
-            Logger.Info($"Arquivos gerados em {_outputDir}");
+            if (clubCount == 0 && playerCount == 0)
+            {
+                Logger.Warn("Nenhum clube válido encontrado para exportação.");
+                return false;
+            }
+
+            Logger.Info($"Arquivos gerados em {_outputDir} | clubes: {clubCount} | jogadores: {playerCount}");
+            return true;
+        }
+
+        private static void WriteRow(StreamWriter writer, params string[] values)
+        {
+            if (values == null || values.Length == 0)
+            {
+                writer.WriteLine();
+                return;
+            }
+
+            var builder = new StringBuilder(values.Length * 16);
+
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append(',');
+                }
+
+                builder.Append(EscapeCsvValue(values[i]));
+            }
+
+            writer.WriteLine(builder.ToString());
+        }
+
+        private static string EscapeCsvValue(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = value.Replace("\"", "\"\"");
+            if (normalized.Contains(',') || normalized.Contains('"') || normalized.Contains('\n') || normalized.Contains('\r'))
+            {
+                return $"\"{normalized}\"";
+            }
+
+            return normalized;
         }
 
         private static bool IsValidChampionship(string championship)
@@ -123,6 +193,5 @@ namespace ProcessamentoEmLote.Services
                 NumeroDaCamisa = player.ShirtNumber?.ToString() ?? string.Empty
             };
         }
-
     }
 }

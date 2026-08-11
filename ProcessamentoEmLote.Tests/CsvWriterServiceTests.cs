@@ -39,14 +39,19 @@ namespace ProcessamentoEmLote.Tests
                 }
             };
 
-            // Usa o utilitário centralizado
-            var outputDir = StringUtils.GetProjectPath("Data/TestOutput");
-
+            var outputDir = CreateUniqueOutputDir();
             var writer = new CsvWriterService(outputDir);
             writer.WriteCsvFiles(clubs);
 
             Assert.True(File.Exists(Path.Combine(outputDir, "clubs.csv")));
             Assert.True(File.Exists(Path.Combine(outputDir, "players.csv")));
+        }
+
+        private static string CreateUniqueOutputDir()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "ProcessamentoEmLote.Tests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            return dir;
         }
     }
 }

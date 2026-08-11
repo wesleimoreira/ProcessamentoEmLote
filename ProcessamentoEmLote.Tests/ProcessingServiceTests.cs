@@ -1,4 +1,4 @@
-﻿using ProcessamentoEmLote.Services;
+using ProcessamentoEmLote.Services;
 using ProcessamentoEmLote.Utils;
 
 namespace ProcessamentoEmLote.Tests
@@ -9,18 +9,22 @@ namespace ProcessamentoEmLote.Tests
         public void DeveExecutarPipelineSemErros()
         {
             var reader = new JsonReaderService();
-            var outputDir = StringUtils.GetProjectPath("Data/TestOutput");
+            var outputDir = CreateUniqueOutputDir();
             var writer = new CsvWriterService(outputDir);
             var processor = new ProcessingService(reader, writer);
 
             var inputFile = StringUtils.GetProjectPath("Data/Input/sample_clubes.jsonl");
 
-            // Executa sem lançar exceção
             processor.Run(inputFile);
 
-            // Garante que a pasta de saída existe
             Assert.True(Directory.Exists(outputDir));
         }
 
+        private static string CreateUniqueOutputDir()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "ProcessamentoEmLote.Tests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            return dir;
+        }
     }
 }

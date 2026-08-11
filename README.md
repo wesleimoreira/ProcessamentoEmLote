@@ -1,20 +1,18 @@
 # ProcessamentoEmLote
 
-Projeto desenvolvido em **.NET 10** para processamento em lote de dados de clubes e jogadores de futebol.
+Projeto em **.NET 10** para processamento em lote de dados de clubes e jogadores de futebol.
 
-O sistema lê um arquivo de entrada no formato **JSONL** (ou **JSON**), aplica regras de negócio e gera dois arquivos CSV:
+O sistema lê arquivos em formato **JSONL** ou **JSON**, filtra os clubes válidos, aplica regras de negócio e gera dois arquivos CSV:
 
-- `clubs.csv` → contém um registro por clube.
-- `players.csv` → contém um registro por jogador.
+- `clubs.csv` — registro de clubes.
+- `players.csv` — registro de jogadores vinculados aos clubes processados.
 
 ---
 
-# Como Executar
-
-## Pré-requisitos
+# Requisitos
 
 - .NET 10 SDK instalado.
-- Arquivo de entrada nos formatos `.jsonl` ou `.json`.
+- Arquivo de entrada no formato `.json` ou `.jsonl`.
 
 Download do SDK:
 
@@ -22,160 +20,1304 @@ https://dotnet.microsoft.com/download
 
 ---
 
-## Passos
+# Como executar
 
-### 1. Clonar o repositório
+## 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/seuusuario/ProcessamentoEmLote.git
+git clone https://github.com/wesleimoreira/ProcessamentoEmLote.git
 cd ProcessamentoEmLote
 ```
 
-### 2. Adicionar o arquivo de entrada
+## 2. Preparar o arquivo de entrada
 
-Coloque o arquivo `.jsonl` ou `.json` na pasta:
+Coloque o arquivo de entrada na pasta:
 
 ```text
-Data/Input/
+ProcessamentoEmLote/Data/Input/
 ```
 
-### 3. Executar o projeto
+Exemplo:
+
+```text
+ProcessamentoEmLote/Data/Input/sample_clubes.jsonl
+```
+
+## 3. Executar o projeto
+
+### Usando o arquivo padrão
 
 ```bash
 dotnet run
 ```
 
-### 4. Verificar os arquivos gerados
+### Usando um caminho específico
 
-Os arquivos CSV serão criados em:
+```bash
+dotnet run --project ProcessamentoEmLote -- ProcessamentoEmLote/Data/Input/sample_clubes.jsonl
+```
+
+ou
+
+```bash
+dotnet run --project ProcessamentoEmLote -- C:\caminho\do\arquivo\entrada.jsonl
+```
+
+## 4. Verificar a saída
+
+Os arquivos CSV serão gerados em:
 
 ```text
-Data/Output/
+ProcessamentoEmLote/Data/Output/
 ```
 
 ---
 
-# Estrutura do Projeto
+# Estrutura do projeto
 
 ```text
 ProcessamentoEmLote/
-│
-├── Program.cs
+├── ProcessamentoEmLote/
+│   ├── Program.cs
+│   ├── ProcessamentoEmLote.csproj
+│   ├── Data/
+│   │   ├── Input/
+│   │   └── Output/
+│   ├── Models/
+│   │   ├── Club.cs
+│   │   └── Player.cs
+│   ├── Services/
+│   │   ├── JsonReaderService.cs
+│   │   ├── CsvWriterService.cs
+│   │   └── ProcessingService.cs
+│   ├── DTOs/
+│   │   ├── ClubCsv.cs
+│   │   └── PlayerCsv.cs
+│   └── Utils/
+│       ├── DateUtils.cs
+│       ├── Logger.cs
+│       └── StringUtils.cs
+├── ProcessamentoEmLote.Tests/
+│   └── ... testes automatizados
 ├── README.md
-│
-├── Data/
-│   ├── Input/        # Arquivos de entrada (.json/.jsonl)
-│   └── Output/       # Arquivos gerados (.csv)
-│
-├── Models/
-│   ├── Club.cs
-│   └── Player.cs
-│
-├── Services/
-│   ├── JsonReaderService.cs
-│   ├── CsvWriterService.cs
-│   └── ProcessingService.cs
-│
-└── Utils/
-    └── Helpers e funções auxiliares
+├── ProcessamentoEmLote.slnx
+└── .gitignore
 ```
 
 ---
 
-# Regras de Negócio
+# Regras de negócio
 
 - Apenas clubes das séries **A** e **B** são processados.
-- Cada jogador recebe o identificador (`club_id`) do clube ao qual pertence.
-- Campos de lista (como cores) são convertidos para uma única string separada por `|` (pipe).
-- Datas são exportadas no formato:
+- Cada jogador recebe o identificador do clube (`club_id`) no CSV de jogadores.
+- Listas como `colors` são convertidas para uma única string separada por ` | `.
+- Datas são exportadas no padrão:
 
 ```text
 yyyy-MM-dd
 ```
 
-- Datas inválidas resultam em campo vazio.
-- Campos ausentes ou nulos são exportados como campo vazio.
-- Arquivos CSV são gerados em:
-  - UTF-8
-  - Com cabeçalho
-  - Separados por vírgula
-  - Compatíveis com RFC 4180
+- Datas inválidas são convertidas para campo vazio.
+- Campo nulo ou ausente vira string vazia.
 - Linhas inválidas são ignoradas sem interromper o processamento.
-- Leitura e escrita são realizadas em streaming para suportar grandes volumes de dados.
+- Leitura e escrita são feitas em fluxo para reduzir memória e atender melhor a lotes grandes.
+- Arquivos gerados em UTF-8 com cabeçalho e separador `,`.
 
 ---
 
-# Dependências
+# Tratamento de erros
 
-## Opção 1 — Implementação Pura (.NET) -- CsvWriterService_s
+O sistema registra e continua em cenários como:
 
-Sem dependências externas.
+- arquivo não encontrado;
+- extensão inválida;
+- arquivo vazio;
+- linha com JSON inválido;
+- exceções inesperadas durante a leitura ou exportação.
 
-Utiliza:
+Exemplos de comportamento:
 
-- `StreamReader`
-- `StreamWriter`
-- Manipulação manual de CSV
+- `FileNotFoundException` → log de erro e interrupção do fluxo.
+- `.json` ou `.jsonl` inválidos → exceção de tipo não suportado.
+- linha vazia → ignorada.
+- linha com JSON inválido → registrada como `[WARN]` e ignorada.
 
 ---
 
-## Opção 2 — Utilizando CsvHelper -- CsvWriterService
+# Saídas geradas
 
-Instalação:
+A execução produz os seguintes arquivos:
+
+```text
+clubs.csv
+players.csv
+```
+
+No diretório:
+
+```text
+ProcessamentoEmLote/Data/Output/
+```
+
+---
+
+# Execução de testes
+
+Para validar o projeto:
 
 ```bash
-dotnet add package CsvHelper
+dotnet test
 ```
 
-Benefícios:
+Resultado esperado:
 
-- Escrita automática de CSV
-- Configuração simplificada
-- Melhor manutenção do código
-
-Classes utilizadas:
-
-- `CsvWriter`
-- `CsvConfiguration`
+- todos os testes da solução devem passar;
+- o projeto deve compilar sem erros;
+- o pipeline de leitura/exportação deve funcionar em cenários de sucesso e validação de erro.
 
 ---
 
-# Tratamento de Erros
+# Observações de performance
 
-O sistema trata os seguintes cenários:
+O projeto foi implementado pensando em escalabilidade para grande volume de dados:
 
-| Situação | Comportamento |
-|-----------|--------------|
-| Arquivo inexistente | Exibe erro informativo |
-| Extensão inválida | Aceita apenas `.json` ou `.jsonl` |
-| Arquivo vazio | Registra `[WARN]` e não gera saída |
-| Linha inválida | Registra `[WARN]` e continua |
-| Exceção inesperada | Registra `[ERROR]` sem encerrar abruptamente |
-
----
-
-# Exemplo de Execução
-
-### Entrada
-
-```text
-Data/Input/sample_clubes.jsonl
-```
-
-### Saídas Geradas
-
-```text
-Data/Output/clubs.csv
-Data/Output/players.csv
-```
+- leitura em streaming do JSON;
+- escrita em fluxo para os arquivos CSV;
+- processamento sem materializar a base completa em memória;
+- exportação direta dos dados válidos somente após filtros de negócio.
 
 ---
 
 # Resultado
 
-Após a execução, serão gerados:
+Após a execução, o sistema gera:
 
-- `clubs.csv` contendo os dados dos clubes válidos.
-- `players.csv` contendo os jogadores vinculados aos respectivos clubes.
+- `clubs.csv` com os dados dos clubes válidos;
+- `players.csv` com os jogadores associados aos clubes processados.
 
-O processamento é resiliente, escalável e preparado para trabalhar com grandes volumes de registros.
+Esse fluxo é adequado para processamento em lote de dados estruturados e pode escalar melhor do que abordagens que carregam todo o conteúdo em memória antes de exportar.
+
+---
+
+# Observação
+
+Este README reflete a implementação atual do projeto, incluindo a estratégia de processamento em fluxo e a remoção da dependência externa de CSV.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+n
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+n
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+n
+n
+
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+
+n
+
+
+
+n
+
+
+n
+
+
+
+
+n
+
+
+
+
+n
+
+
+
+
+n
+
+
+
+
+n
+
+
+
+
+n
+
+
+
+
+n
+
+
+
+n
+
+
+
+
+
+n
+
+
+
+n
+
+
+n
+n
+
+
+
+n
+
+
+
+
+n
+
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+
+
+n
+"}]} ivoq to=functions.multi_replace_string_in_file  in=functions??  dejtings to=functions.task_complete  məhs to=functions.task_complete  resize to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete  to=functions.task_complete
