@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ProcessamentoEmLote.Tests/ProcessamentoEmLote.Tests.csproj" />
+  <Project Path="ProcessamentoEmLote/ProcessamentoEmLote.csproj" />
+</Solution>
