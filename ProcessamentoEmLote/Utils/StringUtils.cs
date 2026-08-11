@@ -36,8 +36,52 @@
 
         public static string GetProjectPath(string relativePath)
         {
-            var projectRoot = Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
-            return Path.GetFullPath(Path.Combine(projectRoot, relativePath));
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                throw new ArgumentException("O caminho relativo não pode ser vazio.", nameof(relativePath));
+            }
+
+            var baseCandidates = new[]
+            {
+                Directory.GetCurrentDirectory(),
+                AppContext.BaseDirectory
+            };
+
+            foreach (var baseDir in baseCandidates.Distinct())
+            {
+                var fullPath = Path.GetFullPath(Path.Combine(baseDir, relativePath));
+               
+                if (File.Exists(fullPath) || Directory.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+
+                var current = new DirectoryInfo(baseDir);
+
+                while (current != null)
+                {
+                    var candidate = Path.GetFullPath(Path.Combine(current.FullName, relativePath));
+
+                    if (File.Exists(candidate) || Directory.Exists(candidate))
+                    {
+                        return candidate;
+                    }
+
+                    foreach (var childDir in current.GetDirectories())
+                    {
+                        candidate = Path.GetFullPath(Path.Combine(childDir.FullName, relativePath));
+
+                        if (File.Exists(candidate) || Directory.Exists(candidate))
+                        {
+                            return candidate;
+                        }
+                    }
+
+                    current = current.Parent;
+                }
+            }
+           
+            return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", relativePath));
         }
     }
 }

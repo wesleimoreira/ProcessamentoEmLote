@@ -24,5 +24,11 @@ namespace ProcessamentoEmLote.Models
 
         [JsonPropertyName("shirt_number")]
         public int? ShirtNumber { get; set; } = default!;
+
+        [JsonPropertyName("nationality")]
+        public string? Nationality { get; set; }
+
+        [JsonPropertyName("market_value")]
+        public int? MarketValue { get; set; }
     }
 }

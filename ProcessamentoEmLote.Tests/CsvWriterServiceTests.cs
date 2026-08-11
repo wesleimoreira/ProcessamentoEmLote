@@ -1,7 +1,6 @@
 ﻿using ProcessamentoEmLote.Models;
 using ProcessamentoEmLote.Services;
 using ProcessamentoEmLote.Utils;
-using Xunit;
 
 namespace ProcessamentoEmLote.Tests
 {
@@ -12,7 +11,7 @@ namespace ProcessamentoEmLote.Tests
         {
             var clubs = new List<Club>
             {
-                new Club {
+                new() {
                     ClubId = "TESTE",
                     Name = "Clube Teste",
                     Championship = "SERIE A",
@@ -23,9 +22,9 @@ namespace ProcessamentoEmLote.Tests
                     Stadium = "Estádio",
                     President = "Presidente",
                     Nickname = "Apelido",
-                    Colors = new List<string> { "azul", "branco" },
-                    Players = new List<Player>
-                    {
+                    Colors = ["azul", "branco"],
+                    Players =
+                    [
                         new Player
                         {
                             PlayerId = "P1",
@@ -36,7 +35,7 @@ namespace ProcessamentoEmLote.Tests
                             Position = "Atacante",
                             ShirtNumber = 9
                         }
-                    }
+                    ]
                 }
             };
 
