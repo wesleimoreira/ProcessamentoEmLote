@@ -1,5 +1,7 @@
 ﻿using ProcessamentoEmLote.Models;
 using ProcessamentoEmLote.Services;
+using ProcessamentoEmLote.Utils;
+using Xunit;
 
 namespace ProcessamentoEmLote.Tests
 {
@@ -10,7 +12,7 @@ namespace ProcessamentoEmLote.Tests
         {
             var clubs = new List<Club>
             {
-                new() {
+                new Club {
                     ClubId = "TESTE",
                     Name = "Clube Teste",
                     Championship = "SERIE A",
@@ -21,9 +23,9 @@ namespace ProcessamentoEmLote.Tests
                     Stadium = "Estádio",
                     President = "Presidente",
                     Nickname = "Apelido",
-                    Colors = ["azul", "branco"],
-                    Players =
-                    [
+                    Colors = new List<string> { "azul", "branco" },
+                    Players = new List<Player>
+                    {
                         new Player
                         {
                             PlayerId = "P1",
@@ -34,12 +36,12 @@ namespace ProcessamentoEmLote.Tests
                             Position = "Atacante",
                             ShirtNumber = 9
                         }
-                    ]
+                    }
                 }
             };
 
-            var projectRoot = Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
-            var outputDir = Path.Combine(projectRoot, "Data", "TestOutput");
+            // Usa o utilitário centralizado
+            var outputDir = StringUtils.GetProjectPath("Data/TestOutput");
 
             var writer = new CsvWriterService(outputDir);
             writer.WriteCsvFiles(clubs);

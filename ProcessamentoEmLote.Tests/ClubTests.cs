@@ -1,6 +1,5 @@
 ﻿using ProcessamentoEmLote.Models;
 using ProcessamentoEmLote.Utils;
-using System.Numerics;
 
 namespace ProcessamentoEmLote.Tests
 {

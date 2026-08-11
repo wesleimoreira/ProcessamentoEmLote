@@ -1,15 +1,28 @@
-﻿namespace ProcessamentoEmLote.Models
+﻿using System.Text.Json.Serialization;
+
+namespace ProcessamentoEmLote.Models
 {
     public class Player
     {
-        public string PlayerId { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("player_id")]
+        public string PlayerId { get; set; } = default!;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        [JsonPropertyName("age")]
         public int? Age { get; set; }
+
+        [JsonPropertyName("goals")]
         public int? Goals { get; set; }
-        public string DebutDate { get; set; } = string.Empty;
-        public string Position { get; set; } = string.Empty;
-        public int? ShirtNumber { get; set; }
-        public string Nationality { get; set; } = string.Empty;
-        public decimal? MarketValue { get; set; }
+
+        [JsonPropertyName("debut_date")]
+        public string DebutDate { get; set; } = default!;
+
+        [JsonPropertyName("position")]
+        public string Position { get; set; } = default!;
+
+        [JsonPropertyName("shirt_number")]
+        public int? ShirtNumber { get; set; } = default!;
     }
 }

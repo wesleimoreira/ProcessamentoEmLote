@@ -13,15 +13,14 @@ namespace ProcessamentoEmLote.Services
 
         public CsvWriterService(string outputDir = "Data/Output")
         {
-            var projectRoot = Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
-
-            _outputDir = Path.GetFullPath(Path.Combine(projectRoot, outputDir));
+            _outputDir = StringUtils.GetProjectPath(outputDir);
 
             if (!Directory.Exists(_outputDir))
             {
                 Directory.CreateDirectory(_outputDir);
             }
         }
+
 
 
         public void WriteCsvFiles(IEnumerable<Club> clubs)
@@ -124,5 +123,6 @@ namespace ProcessamentoEmLote.Services
                 NumeroDaCamisa = player.ShirtNumber?.ToString() ?? string.Empty
             };
         }
+
     }
 }

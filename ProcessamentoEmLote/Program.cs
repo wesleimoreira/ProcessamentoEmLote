@@ -9,9 +9,9 @@ class Program
 
         if (args.Length == 0)
         {
-            inputFilePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "Input", "sample_clubes.jsonl");
+            inputFilePath = StringUtils.GetProjectPath("Data/Input/sample_clubes.jsonl");
 
-            if (inputFilePath.Length == 0)
+            if (string.IsNullOrWhiteSpace(inputFilePath))
             {
                 Logger.Warn("[ERROR] Informe o caminho do arquivo JSONL como parâmetro.");
             }

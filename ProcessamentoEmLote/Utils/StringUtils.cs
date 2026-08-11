@@ -33,5 +33,11 @@
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
         }
+
+        public static string GetProjectPath(string relativePath)
+        {
+            var projectRoot = Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
+            return Path.GetFullPath(Path.Combine(projectRoot, relativePath));
+        }
     }
 }
